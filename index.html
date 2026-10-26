@@ -72,6 +72,8 @@
       </div>
 
       <form id="connect-form">
+        <div id="connect-error" style="display: none; color: var(--danger); background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 13px;"></div>
+
         <div class="form-group">
           <label class="form-label" for="input-repo">Repository (owner/repo) *</label>
           <input type="text" id="input-repo" class="form-input" placeholder="e.g. octocat/my-website" required>
@@ -134,6 +136,6 @@
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toast-container"></div>
 
-  <script src="js/studio.js"></script>
+  <script src="js/studio.js?v=1.0.3"></script>
 </body>
 </html>

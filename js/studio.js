@@ -36,6 +36,7 @@
     viewActions: document.getElementById('view-actions'),
     formContainer: document.getElementById('form-container'),
     connectModal: document.getElementById('connect-modal'),
+    connectError: document.getElementById('connect-error'),
     connectForm: document.getElementById('connect-form'),
     inputRepo: document.getElementById('input-repo'),
     inputBranch: document.getElementById('input-branch'),
@@ -89,40 +90,63 @@
     return new TextDecoder('utf-8').decode(bytes);
   }
 
+  function sanitizeRepo(repo) {
+    if (!repo) return '';
+    return repo
+      .replace(/^https?:\/\/github\.com\//i, '')
+      .replace(/\.git$/i, '')
+      .replace(/^\/+|\/+$/g, '')
+      .trim();
+  }
+
+  function sanitizePath(path) {
+    if (!path) return '';
+    return path.replace(/^\/+/, '').trim();
+  }
+
   // GitHub API Client
   async function ghRequest(endpoint, options = {}) {
     const url = endpoint.startsWith('https://') ? endpoint : `https://api.github.com${endpoint}`;
     const headers = {
       'Accept': 'application/vnd.github.v3+json',
-      'Authorization': `Bearer ${state.token}`,
+      'Authorization': `Bearer ${state.token.trim()}`,
       ...(options.headers || {})
     };
 
     const res = await fetch(url, { ...options, headers });
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.message || `GitHub API error: ${res.status} ${res.statusText}`);
+      let msg = errData.message || `HTTP ${res.status} ${res.statusText}`;
+      if (res.status === 401) {
+        msg = 'Invalid GitHub Token (401 Bad credentials). Please verify your Personal Access Token.';
+      } else if (res.status === 404) {
+        msg = `File or repository not found (404). Check repo name "${state.repo}" and path.`;
+      }
+      throw new Error(msg);
     }
     return res.json();
   }
 
   async function fetchFile(path) {
-    const data = await ghRequest(`/repos/${state.repo}/contents/${path}?ref=${state.branch}`);
+    const cleanPath = sanitizePath(path);
+    const data = await ghRequest(`/repos/${state.repo}/contents/${cleanPath}?ref=${state.branch}`);
     const content = base64ToUtf8(data.content);
     return {
-      content: path.endsWith('.json') ? JSON.parse(content) : content,
+      content: cleanPath.endsWith('.json') ? JSON.parse(content) : content,
       sha: data.sha
     };
   }
 
   async function fetchFolder(path) {
-    return ghRequest(`/repos/${state.repo}/contents/${path}?ref=${state.branch}`);
+    const cleanPath = sanitizePath(path);
+    return ghRequest(`/repos/${state.repo}/contents/${cleanPath}?ref=${state.branch}`);
   }
 
   async function putFile(path, content, message, sha) {
+    const cleanPath = sanitizePath(path);
     let base64Content;
     // Check if content is already a raw base64 string (e.g. image upload)
-    if (typeof content === 'string' && /\.(jpe?g|png|gif|webp|ico|svg|pdf)$/i.test(path) && /^[A-Za-z0-9+/=\s]+$/.test(content)) {
+    if (typeof content === 'string' && /\.(jpe?g|png|gif|webp|ico|svg|pdf)$/i.test(cleanPath) && /^[A-Za-z0-9+/=\s]+$/.test(content)) {
       base64Content = content.replace(/\s/g, '');
     } else {
       base64Content = utf8ToBase64(typeof content === 'string' ? content : JSON.stringify(content, null, 2));
@@ -135,20 +159,21 @@
     };
     if (sha) body.sha = sha;
 
-    return ghRequest(`/repos/${state.repo}/contents/${path}`, {
+    return ghRequest(`/repos/${state.repo}/contents/${cleanPath}`, {
       method: 'PUT',
       body: JSON.stringify(body)
     });
   }
 
   async function deleteFile(path, message, sha) {
+    const cleanPath = sanitizePath(path);
     const body = {
       message,
       sha,
       branch: state.branch
     };
 
-    return ghRequest(`/repos/${state.repo}/contents/${path}`, {
+    return ghRequest(`/repos/${state.repo}/contents/${cleanPath}`, {
       method: 'DELETE',
       body: JSON.stringify(body)
     });
@@ -190,17 +215,18 @@
 
     el.connectForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      state.repo = el.inputRepo.value.trim();
+      state.repo = sanitizeRepo(el.inputRepo.value);
       state.branch = el.inputBranch.value.trim() || 'main';
-      state.configPath = el.inputConfig.value.trim() || 'cms.config.json';
+      state.configPath = sanitizePath(el.inputConfig.value) || 'cms.config.json';
       state.token = el.inputToken.value.trim();
+
+      if (el.connectError) el.connectError.style.display = 'none';
 
       localStorage.setItem('gitcms_repo', state.repo);
       localStorage.setItem('gitcms_branch', state.branch);
       localStorage.setItem('gitcms_config', state.configPath);
       localStorage.setItem('gitcms_token', state.token);
 
-      closeConnectModal();
       await loadRepositoryConfig();
     });
 
@@ -221,6 +247,7 @@
   // Load Configuration & Collections
   async function loadRepositoryConfig() {
     try {
+      if (el.connectError) el.connectError.style.display = 'none';
       el.repoBadge.textContent = `${state.repo} (${state.branch})`;
       showToast('Loading schema configuration...', 'success');
 
@@ -235,6 +262,7 @@
       renderSidebar();
       el.emptyState.style.display = 'none';
       el.editorView.style.display = 'block';
+      closeConnectModal();
 
       // Open first collection by default
       if (state.config.collections && state.config.collections.length > 0) {
@@ -242,7 +270,11 @@
       }
     } catch (err) {
       console.error(err);
-      showToast(`Error loading configuration: ${err.message}`, 'error');
+      if (el.connectError) {
+        el.connectError.textContent = `Error: ${err.message}`;
+        el.connectError.style.display = 'block';
+      }
+      showToast(`Error: ${err.message}`, 'error');
       openConnectModal();
     }
   }
