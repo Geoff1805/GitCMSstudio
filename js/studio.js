@@ -68,13 +68,25 @@
     }, 4000);
   }
 
-  // Base64 UTF-8 Helpers
+  // Robust UTF-8 / Base64 Helpers using TextEncoder & TextDecoder
   function utf8ToBase64(str) {
-    return btoa(unescape(encodeURIComponent(str)));
+    const bytes = new TextEncoder().encode(str);
+    let binary = '';
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
   }
 
-  function base64ToUtf8(str) {
-    return decodeURIComponent(escape(atob(str.replace(/\n/g, ''))));
+  function base64ToUtf8(base64) {
+    const cleanBase64 = base64.replace(/\s/g, '');
+    const binary = atob(cleanBase64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return new TextDecoder('utf-8').decode(bytes);
   }
 
   // GitHub API Client
@@ -108,9 +120,17 @@
   }
 
   async function putFile(path, content, message, sha) {
+    let base64Content;
+    // Check if content is already a raw base64 string (e.g. image upload)
+    if (typeof content === 'string' && /\.(jpe?g|png|gif|webp|ico|svg|pdf)$/i.test(path) && /^[A-Za-z0-9+/=\s]+$/.test(content)) {
+      base64Content = content.replace(/\s/g, '');
+    } else {
+      base64Content = utf8ToBase64(typeof content === 'string' ? content : JSON.stringify(content, null, 2));
+    }
+
     const body = {
       message,
-      content: utf8ToBase64(typeof content === 'string' ? content : JSON.stringify(content, null, 2)),
+      content: base64Content,
       branch: state.branch
     };
     if (sha) body.sha = sha;
