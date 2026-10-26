@@ -1,0 +1,81 @@
+{
+  "title": "My Website Studio",
+  "media_folder": "public/images",
+  "public_folder": "/images",
+  "collections": [
+    {
+      "name": "settings",
+      "label": "⚙️ Site Settings & Branding",
+      "type": "file",
+      "file": "src/data/site_settings.json",
+      "fields": [
+        { "name": "company_name", "label": "Company Name", "type": "string", "required": true },
+        { "name": "slogan", "label": "Tagline / Slogan", "type": "string" },
+        { "name": "logo_url", "label": "Logo", "type": "image" },
+        { "name": "email", "label": "Contact Email", "type": "string", "required": true },
+        { "name": "phone", "label": "Phone Number", "type": "string" },
+        {
+          "name": "theme",
+          "label": "🎨 Color Palette",
+          "type": "object",
+          "fields": [
+            {
+              "name": "preset",
+              "label": "Preset Theme",
+              "type": "select",
+              "options": [
+                { "label": "Emerald", "value": "emerald" },
+                { "label": "Ocean Blue", "value": "ocean" },
+                { "label": "Amber", "value": "amber" },
+                { "label": "Royal Purple", "value": "purple" },
+                { "label": "Custom", "value": "custom" }
+              ],
+              "default": "emerald"
+            },
+            { "name": "primary_color", "label": "Primary Color", "type": "color", "default": "#10b981" },
+            { "name": "accent_color", "label": "Accent Color", "type": "color", "default": "#14b8a6" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "home",
+      "label": "🏠 Home Page",
+      "type": "file",
+      "file": "src/data/home.json",
+      "fields": [
+        {
+          "name": "hero",
+          "label": "Hero Section",
+          "type": "object",
+          "fields": [
+            { "name": "pill_text", "label": "Badge Text", "type": "string" },
+            { "name": "title_prefix", "label": "Title (Prefix)", "type": "string" },
+            { "name": "title_highlight", "label": "Title (Highlight)", "type": "string" },
+            { "name": "subtitle", "label": "Subtitle", "type": "text" },
+            { "name": "cta_primary_text", "label": "Primary Button Text", "type": "string" },
+            { "name": "cta_primary_link", "label": "Primary Button Link", "type": "string" }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pages",
+      "label": "📄 Dynamic Pages",
+      "type": "folder",
+      "folder": "src/data/pages",
+      "extension": "json",
+      "format": "json",
+      "slug_field": "slug",
+      "identifier_field": "title",
+      "fields": [
+        { "name": "title", "label": "Page Title", "type": "string", "required": true },
+        { "name": "slug", "label": "URL Slug", "type": "string", "required": true },
+        { "name": "seo_description", "label": "SEO Description", "type": "text" },
+        { "name": "hero_image", "label": "Hero Image", "type": "image" },
+        { "name": "show_in_nav", "label": "Show in Main Navigation", "type": "boolean", "default": false },
+        { "name": "content", "label": "Content (Markdown)", "type": "markdown" }
+      ]
+    }
+  ]
+}

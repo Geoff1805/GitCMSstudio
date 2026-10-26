@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitCMSstudio — Headless Git CMS</title>
+  <link rel="stylesheet" href="css/studio.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2310b981'/><text y='70' x='50' text-anchor='middle' font-family='sans-serif' font-weight='bold' font-size='60' fill='white'>G</text></svg>">
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="studio-header">
+    <div class="studio-brand">
+      <div class="studio-logo">G</div>
+      <div class="studio-title" id="studio-app-title">GitCMSstudio</div>
+      <span class="studio-repo-tag" id="studio-repo-badge">Not connected</span>
+    </div>
+
+    <div class="studio-actions">
+      <span id="unsaved-badge" class="badge-modified" style="display: none;">Unsaved changes</span>
+      <button id="btn-reconnect" class="btn btn-secondary">Settings</button>
+      <button id="btn-publish" class="btn btn-primary" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        Publish to GitHub
+      </button>
+    </div>
+  </header>
+
+  <!-- Workspace Container -->
+  <div class="studio-container">
+    <!-- Sidebar Navigation -->
+    <aside class="studio-sidebar" id="sidebar-nav">
+      <div class="sidebar-section-title">Collections</div>
+      <div id="nav-collections-list">
+        <div style="padding: 20px; color: var(--text-muted); font-size: 13px;">Connect a repository to load collections.</div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="studio-content" id="main-content">
+      <div id="empty-state" style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+        <h2>Welcome to GitCMSstudio</h2>
+        <p>A lightweight, privacy-focused headless CMS running 100% in your browser.</p>
+        <button id="btn-open-connect" class="btn btn-primary" style="margin-top: 16px;">Connect a GitHub Repository</button>
+      </div>
+
+      <div id="editor-view" style="display: none;">
+        <div class="content-header">
+          <div>
+            <h1 class="content-title" id="view-title">Settings</h1>
+            <div class="content-subtitle" id="view-subtitle">Edit configuration</div>
+          </div>
+          <div id="view-actions">
+            <!-- Dynamic buttons like "New Entry" -->
+          </div>
+        </div>
+
+        <div id="form-container">
+          <!-- Dynamic Form Elements Rendered Here -->
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Connect Modal -->
+  <div class="modal-overlay" id="connect-modal" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Connect GitHub Repository</h3>
+        <button class="btn btn-secondary" id="btn-close-connect" style="padding: 4px 8px;">✕</button>
+      </div>
+
+      <form id="connect-form">
+        <div class="form-group">
+          <label class="form-label" for="input-repo">Repository (owner/repo) *</label>
+          <input type="text" id="input-repo" class="form-input" placeholder="e.g. octocat/my-website" required>
+          <div class="form-hint">Public or private GitHub repository.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="input-branch">Branch *</label>
+          <input type="text" id="input-branch" class="form-input" value="main" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="input-config">Schema Configuration File Path *</label>
+          <input type="text" id="input-config" class="form-input" value="cms.config.json" required>
+          <div class="form-hint">Path to the CMS schema file inside your repository.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="input-token">GitHub Personal Access Token (PAT) *</label>
+          <input type="password" id="input-token" class="form-input" placeholder="ghp_xxxxxxxxxxxx" required>
+          <div class="form-hint">Requires <code>repo</code> scope (or fine-grained Contents: Read & Write). Stored only in your browser.</div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-connect">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-connect">Connect & Load</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Publish Commit Modal -->
+  <div class="modal-overlay" id="publish-modal" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Publish Changes to GitHub</h3>
+        <button class="btn btn-secondary" id="btn-close-publish" style="padding: 4px 8px;">✕</button>
+      </div>
+
+      <div id="publish-files-list" style="margin-bottom: 20px; font-size: 13px;">
+        <!-- List of modified files -->
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="input-commit-msg">Commit Message</label>
+        <input type="text" id="input-commit-msg" class="form-input" value="Update content via GitCMSstudio">
+      </div>
+
+      <div id="publish-progress" style="display: none; margin: 16px 0; font-size: 13px; color: var(--accent);">
+        Publishing changes to GitHub...
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px;">
+        <button type="button" class="btn btn-secondary" id="btn-cancel-publish">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btn-confirm-publish">Confirm & Push</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="js/studio.js"></script>
+</body>
+</html>
