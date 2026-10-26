@@ -100,3 +100,11 @@ Create a `cms.config.json` file in the root of your target website repository:
 ## 📄 License
 
 Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for details.
+
+---
+
+## 📄 Licence
+
+MIT — voir [LICENSE](LICENSE).
+
+Copyright (c) 2026 Geoff1805
