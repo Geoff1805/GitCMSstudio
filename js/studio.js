@@ -83,7 +83,6 @@
     const headers = {
       'Accept': 'application/vnd.github.v3+json',
       'Authorization': `Bearer ${state.token}`,
-      'User-Agent': 'GitCMSstudio',
       ...(options.headers || {})
     };
 
