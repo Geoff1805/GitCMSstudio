@@ -42,6 +42,8 @@
     inputBranch: document.getElementById('input-branch'),
     inputConfig: document.getElementById('input-config'),
     inputToken: document.getElementById('input-token'),
+
+    inputRemember: document.getElementById('input-remember'),
     btnOpenConnect: document.getElementById('btn-open-connect'),
     btnCloseConnect: document.getElementById('btn-close-connect'),
     btnCancelConnect: document.getElementById('btn-cancel-connect'),
@@ -187,11 +189,21 @@
     const qBranch = params.get('branch');
     const qConfig = params.get('config');
 
-    // Read stored credentials from localStorage
-    state.repo = qRepo || localStorage.getItem('gitcms_repo') || '';
-    state.branch = qBranch || localStorage.getItem('gitcms_branch') || 'main';
-    state.configPath = qConfig || localStorage.getItem('gitcms_config') || 'cms.config.json';
-    state.token = localStorage.getItem('gitcms_token') || '';
+    // Helper storage : lit sessionStorage en priorité, puis fallback localStorage
+    function getStored(key) {
+      return sessionStorage.getItem(key) || localStorage.getItem(key) || '';
+    }
+
+    const isRemembered = localStorage.getItem('gitcms_remember') !== 'false';
+    if (el.inputRemember) {
+      el.inputRemember.checked = isRemembered;
+    }
+
+    // Read stored credentials
+    state.repo = qRepo || getStored('gitcms_repo');
+    state.branch = qBranch || getStored('gitcms_branch') || 'main';
+    state.configPath = qConfig || getStored('gitcms_config') || 'cms.config.json';
+    state.token = getStored('gitcms_token');
 
     el.inputRepo.value = state.repo;
     el.inputBranch.value = state.branch;
@@ -222,10 +234,30 @@
 
       if (el.connectError) el.connectError.style.display = 'none';
 
-      localStorage.setItem('gitcms_repo', state.repo);
-      localStorage.setItem('gitcms_branch', state.branch);
-      localStorage.setItem('gitcms_config', state.configPath);
-      localStorage.setItem('gitcms_token', state.token);
+      const remember = el.inputRemember ? el.inputRemember.checked : true;
+      localStorage.setItem('gitcms_remember', remember ? 'true' : 'false');
+
+      if (remember) {
+        localStorage.setItem('gitcms_repo', state.repo);
+        localStorage.setItem('gitcms_branch', state.branch);
+        localStorage.setItem('gitcms_config', state.configPath);
+        localStorage.setItem('gitcms_token', state.token);
+
+        sessionStorage.removeItem('gitcms_repo');
+        sessionStorage.removeItem('gitcms_branch');
+        sessionStorage.removeItem('gitcms_config');
+        sessionStorage.removeItem('gitcms_token');
+      } else {
+        sessionStorage.setItem('gitcms_repo', state.repo);
+        sessionStorage.setItem('gitcms_branch', state.branch);
+        sessionStorage.setItem('gitcms_config', state.configPath);
+        sessionStorage.setItem('gitcms_token', state.token);
+
+        localStorage.removeItem('gitcms_repo');
+        localStorage.removeItem('gitcms_branch');
+        localStorage.removeItem('gitcms_config');
+        localStorage.removeItem('gitcms_token');
+      }
 
       await loadRepositoryConfig();
     });
