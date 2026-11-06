@@ -5,3 +5,14 @@ dist/
 .env
 .env.local
 *.log
+
+# Ajouté automatiquement par Sentinel (Sécurité & Secrets)
+*.keystore
+*.jks
+*.pem
+*.key
+*.p12
+build/
+.gradle/
+__pycache__/
+*.pyc
